@@ -1,7 +1,20 @@
 from django.contrib import admin
 
-from .models import Post, PostAttachment
+from .models import Post, PostAttachment,Like
 
 
-admin.site.register(Post)
-admin.site.register(PostAttachment)
+
+
+class LikeAdmin(admin.ModelAdmin):
+    list_display = ('id', 'created_by', 'created_at')
+
+class PostAttachmentAdmin(admin.ModelAdmin):
+    list_display = ('id', 'image', 'created_by')
+
+class PostAdmin(admin.ModelAdmin):
+    list_display = ('id', 'body', 'created_by', 'created_at_formatted', 'likes_count')
+
+
+admin.site.register(Like, LikeAdmin)
+admin.site.register(PostAttachment, PostAttachmentAdmin)
+admin.site.register(Post, PostAdmin)
