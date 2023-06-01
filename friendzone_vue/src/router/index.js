@@ -9,6 +9,8 @@ import ProfileView from '../views/ProfileView.vue'
 import FriendsView from '../views/FriendsView.vue'
 import PostView from '../views/postview.vue'
 import ChatView from '../views/ChatView.vue'
+import TrendView from '../views/TrendView.vue'
+import EditProfileView from '../views/EditProfileView.vue'
 
 const router = createRouter({
   history: createWebHistory(import.meta.env.BASE_URL),
@@ -49,6 +51,11 @@ const router = createRouter({
       component: ChatView
     },
     {
+      path: '/profile/edit',
+      name: 'editprofile',
+      component: EditProfileView
+    },
+    {
       path: '/profile/:id',
       name: 'profile',
       component: ProfileView
@@ -62,6 +69,11 @@ const router = createRouter({
       path: '/:id',
       name: 'postview',
       component: PostView
+    },
+    {
+      path: '/trends/:id',
+      name: 'trendview',
+      component: TrendView
     },
     {
       path: '/about',
