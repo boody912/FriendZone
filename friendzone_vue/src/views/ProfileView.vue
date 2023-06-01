@@ -21,6 +21,14 @@
                     </button>
 
                     <button 
+                        class="inline-block mt-4 py-4 px-3 bg-purple-600 text-xs text-white rounded-lg" 
+                        @click="sendDirectMessage"
+                        v-if="userStore.user.id !== user.id"
+                    >
+                        Send direct message
+                    </button>
+
+                    <button 
                         class="inline-block py-4 px-3 bg-red-600 text-xs text-white rounded-lg" 
                         @click="logout"
                         v-if="userStore.user.id === user.id"
@@ -118,6 +126,21 @@ export default {
     },
 
     methods: {
+        sendDirectMessage() {
+            console.log('sendDirectMessage')
+
+            axios
+                .get(`/api/chat/${this.$route.params.id}/get-or-create/`)
+                .then(response => {
+                    console.log(response.data)
+
+                    this.$router.push('/chat')
+                })
+                .catch(error => {
+                    console.log('error', error)
+                })
+        },
+
         sendFriendshipRequest() {
             axios
                 .post(`/api/friends/${this.$route.params.id}/request/`)
@@ -125,7 +148,7 @@ export default {
                     console.log('data', response.data)
 
                     if (response.data.message == 'request already sent') {
-                        this.toastStore.showToast(5000, 'The request has already been sent!', 'bg-red-300')                   
+                        this.toastStore.showToast(5000, 'The request has already been sent!', 'bg-red-300')
                     } else {
                         this.toastStore.showToast(5000, 'The request was sent!', 'bg-emerald-300')
                     }
@@ -177,7 +200,3 @@ export default {
     }
 }
 </script>
-
-
-
-
