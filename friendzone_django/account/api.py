@@ -1,14 +1,14 @@
 from django.contrib.auth.forms import PasswordChangeForm
 from django.core.mail import send_mail
-
 from django.http import JsonResponse
 
 from rest_framework.decorators import api_view, authentication_classes, permission_classes
 
-from account.models import User ,FriendshipRequest
-from .serializers import FriendshipRequestSerializer, UserSerializer
+from notification.utils import create_notification
 
-from .forms import ProfileForm, SignupForm
+from .forms import SignupForm, ProfileForm
+from .models import User, FriendshipRequest
+from .serializers import UserSerializer, FriendshipRequestSerializer
 
 
 @api_view(['GET'])
@@ -39,9 +39,7 @@ def signup(request):
         user = form.save()
         user.is_active = False
         user.save()
-        
 
-        # Send verification email later!
         url = f'http://127.0.0.1:8000/activateemail/?email={user.email}&id={user.id}'
 
         send_mail(
@@ -53,12 +51,11 @@ def signup(request):
         )
     else:
         message = form.errors.as_json()
-        
-     
     
     print(message)
 
-    return JsonResponse({'message': message})
+    return JsonResponse({'message': message}, safe=False)
+
 
 @api_view(['GET'])
 def friends(request, pk):
@@ -77,7 +74,8 @@ def friends(request, pk):
         'friends': UserSerializer(friends, many=True).data,
         'requests': requests
     }, safe=False)
-    
+
+
 @api_view(['POST'])
 def editprofile(request):
     user = request.user
@@ -86,15 +84,15 @@ def editprofile(request):
     if User.objects.exclude(id=user.id).filter(email=email).exists():
         return JsonResponse({'message': 'email already exists'})
     else:
-    
         form = ProfileForm(request.POST, request.FILES, instance=user)
 
         if form.is_valid():
             form.save()
-
+        
         serializer = UserSerializer(user)
 
         return JsonResponse({'message': 'information updated', 'user': serializer.data})
+    
 
 @api_view(['POST'])
 def editpassword(request):
@@ -109,7 +107,6 @@ def editpassword(request):
     else:
         return JsonResponse({'message': form.errors.as_json()}, safe=False)
 
-
 @api_view(['POST'])
 def send_friendship_request(request, pk):
     user = User.objects.get(pk=pk)
@@ -118,7 +115,9 @@ def send_friendship_request(request, pk):
     check2 = FriendshipRequest.objects.filter(created_for=user).filter(created_by=request.user)
 
     if not check1 or not check2:
-        FriendshipRequest.objects.create(created_for=user, created_by=request.user)
+        friendrequest = FriendshipRequest.objects.create(created_for=user, created_by=request.user)
+
+        notification = create_notification(request, 'new_friendrequest', friendrequest_id=friendrequest.id)
 
         return JsonResponse({'message': 'friendship request created'})
     else:
@@ -140,5 +139,6 @@ def handle_request(request, pk, status):
     request_user.friends_count = request_user.friends_count + 1
     request_user.save()
 
-    return JsonResponse({'message': 'friendship request updated'})
+    notification = create_notification(request, 'accepted_friendrequest', friendrequest_id=friendship_request.id)
 
+    return JsonResponse({'message': 'friendship request updated'})
