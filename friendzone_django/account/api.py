@@ -75,6 +75,12 @@ def friends(request, pk):
         'requests': requests
     }, safe=False)
 
+@api_view(['GET'])
+def my_friendship_suggestions(request):
+    serializer = UserSerializer(request.user.people_you_may_know.all(), many=True)
+
+    return JsonResponse(serializer.data, safe=False)
+
 
 @api_view(['POST'])
 def editprofile(request):
