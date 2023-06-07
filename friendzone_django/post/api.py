@@ -1,15 +1,15 @@
+from django.db.models import Q
 from django.http import JsonResponse
 
 from rest_framework.decorators import api_view, authentication_classes, permission_classes
 
-from account.models import User
+from account.models import User, FriendshipRequest
 from account.serializers import UserSerializer
-from account.models import FriendshipRequest
 from notification.utils import create_notification
 
-from .forms import PostForm ,AttachmentForm
-from .models import Post, Like ,Comment ,Trend ,PostAttachment
-from .serializers import PostSerializer ,PostDetailSerializer, CommentSerializer,TrendSerializer
+from .forms import PostForm, AttachmentForm
+from .models import Post, Like, Comment, Trend
+from .serializers import PostSerializer, PostDetailSerializer, CommentSerializer, TrendSerializer
 
 
 @api_view(['GET'])
@@ -20,13 +20,12 @@ def post_list(request):
         user_ids.append(user.id)
 
     posts = Post.objects.filter(created_by_id__in=list(user_ids))
-    
+
     trend = request.GET.get('trend', '')
 
     if trend:
-        posts = posts.filter(body__icontains='#' + trend)
+        posts = posts.filter(body__icontains='#' + trend).filter(is_private=False)
 
-    
     serializer = PostSerializer(posts, many=True)
 
     return JsonResponse(serializer.data, safe=False)
@@ -34,17 +33,25 @@ def post_list(request):
 
 @api_view(['GET'])
 def post_detail(request, pk):
-    post = Post.objects.get(pk=pk)
+    user_ids = [request.user.id]
+
+    for user in request.user.friends.all():
+        user_ids.append(user.id)
+
+    post = Post.objects.filter(Q(created_by_id__in=list(user_ids)) | Q(is_private=False)).get(pk=pk)
 
     return JsonResponse({
         'post': PostDetailSerializer(post).data
     })
-    
+
 
 @api_view(['GET'])
-def post_list_profile(request, id):
+def post_list_profile(request, id):   
     user = User.objects.get(pk=id)
     posts = Post.objects.filter(created_by_id=id)
+
+    if not request.user in user.friends.all():
+        posts = posts.filter(is_private=False)
 
     posts_serializer = PostSerializer(posts, many=True)
     user_serializer = UserSerializer(user)
@@ -96,7 +103,6 @@ def post_create(request):
     else:
         return JsonResponse({'error': 'add somehting here later!...'})
     
-    
 
 @api_view(['POST'])
 def post_like(request, pk):
@@ -115,7 +121,7 @@ def post_like(request, pk):
         return JsonResponse({'message': 'like created'})
     else:
         return JsonResponse({'message': 'post already liked'})
-    
+
 
 @api_view(['POST'])
 def post_create_comment(request, pk):
@@ -131,6 +137,7 @@ def post_create_comment(request, pk):
     serializer = CommentSerializer(comment)
 
     return JsonResponse(serializer.data, safe=False)
+
 
 @api_view(['GET'])
 def get_trends(request):

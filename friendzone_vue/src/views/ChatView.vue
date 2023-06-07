@@ -9,17 +9,16 @@
                         v-bind:key="conversation.id"
                         v-on:click="setActiveConversation(conversation.id)"
                     >
-                        <div class="flex items-center space-x-2">
-                            <template
-                                v-for="user in conversation.users"
-                                v-bind:key="user.id"
-                            >
-                                <img :src="user.get_avatar" class="w-[40px] rounded-full">
+                    
 
-                                <p 
-                                    class="text-xs font-bold"
-                                    v-if="user.id !== userStore.user.id"
-                                >{{ user.name }}</p>
+                        <div class="flex flex-col">
+                            <template v-for="user in conversation.users" v-bind:key="user.id">
+                                <div v-if="user.id !== userStore.user.id">
+                                <p class="text-xs font-bold">{{ user.name }}</p>
+                                
+                                <img :src="user.get_avatar" class="w-[40px] rounded-full">
+                                                
+                                </div>
                             </template>
                         </div>
 
